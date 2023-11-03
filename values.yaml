@@ -1,0 +1,57 @@
+replicaCount: 2
+
+image:
+  repository: redis/redis-stack-server
+  pullPolicy: IfNotPresent
+
+namespace: redis
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  headless: true
+  type: ClusterIP
+  port: 6379
+
+configMap:
+  name: redis-stack-configuration
+  master:
+    maxMemory: 1000mb
+    maxMemoryPolicy: allkeys-lru
+    maxClients: 20000
+    timeout: 300
+    dbFileName: dump.rdb
+    dir: /data
+    appendOnly: "yes"
+    save: ""
+  replicas:
+    maxMemory: 1000mb
+    maxMemoryPolicy: allkeys-lru
+    maxClients: 20000
+    timeout: 300
+    dir: /data
+    appendOnly: "yes"
+    save: ""
+
+volumes:
+  # For configuration files
+  - name: redis-claim
+    request: 1Gi
+    storageClassName: gp2
+    mountPath: /etc
+  # Actual data
+  - name: redis-data
+    request: 1Gi
+    storageClassName: gp2
+    mountPath: /var/lib/redis-stack
+
+initVolumeMounts:
+  - name: redis-claim
+    mountPath: /etc
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

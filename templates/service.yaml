@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "redis-stack.name" . }}-service
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "redis-stack.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.service.headless }}
+  clusterIP: None
+  ports:
+    - port: {{ .Values.service.port }}
+  {{- else }}
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  {{- end }}
+  selector:
+    {{- include "redis-stack.selectorLabels" . | nindent 4 }}

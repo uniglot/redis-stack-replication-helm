@@ -1,0 +1,27 @@
+{{- $name := include "redis-stack.name" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "redis-stack.labels" . | nindent 4 }}
+data:
+  master.conf: |
+    maxmemory {{ .Values.configMap.master.maxMemory }}
+    maxmemory-policy {{ .Values.configMap.master.maxMemoryPolicy }}
+    maxclients {{ .Values.configMap.master.maxClients }}
+    timeout {{ .Values.configMap.master.timeout }}
+    dbfilename {{ .Values.configMap.master.dbFileName }}
+    dir {{ .Values.configMap.master.dir }}
+    appendonly {{ .Values.configMap.master.appendOnly }}
+    save {{ .Values.configMap.master.save | default "" | quote }}
+  replica.conf: |
+    replicaof {{ $name }}-0.{{ $name }}-service.{{ .Values.namespace }}.svc.cluster.local {{ .Values.service.port }}
+    maxmemory {{ .Values.configMap.replicas.maxMemory }}
+    maxmemory-policy {{ .Values.configMap.replicas.maxMemoryPolicy }}
+    maxclients {{ .Values.configMap.replicas.maxClients }}
+    timeout {{ .Values.configMap.replicas.timeout }}
+    dir {{ .Values.configMap.replicas.dir }}
+    appendonly {{ .Values.configMap.replicas.appendOnly }}
+    save {{ .Values.configMap.replicas.save | default "" | quote }}
