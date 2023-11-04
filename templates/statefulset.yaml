@@ -69,12 +69,8 @@ spec:
             - /etc/redis-config.conf
           volumeMounts:
             - name: {{ .Values.volumeConf.name }}
-              request: {{ .Values.volumeConf.request }}
-              storageClassName: {{ .Values.volumeConf.storageClassName }}
               mountPath: {{ .Values.volumeConf.mountPath }}
             - name: {{ .Values.volumeData.name }}
-              request: {{ .Values.volumeData.request }}
-              storageClassName: {{ .Values.volumeData.storageClassName }}
               mountPath: {{ .Values.volumeData.mountPath }}
       volumes:
         - name: config-map
