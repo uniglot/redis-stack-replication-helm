@@ -16,6 +16,7 @@ service:
 
 configMap:
   name: redis-stack-configuration
+  mountPath: /mnt
   master:
     maxMemory: 1000mb
     maxMemoryPolicy: allkeys-lru
@@ -34,21 +35,19 @@ configMap:
     appendOnly: "yes"
     save: ""
 
-volumes:
-  # For configuration files
-  - name: redis-claim
-    request: 1Gi
-    storageClassName: gp2
-    mountPath: /etc
-  # Actual data
-  - name: redis-data
-    request: 1Gi
-    storageClassName: gp2
-    mountPath: /var/lib/redis-stack
+# For configuration files
+volumeConf:
+  name: redis-claim
+  request: 1Gi
+  storageClassName: gp2
+  mountPath: /etc
 
-initVolumeMounts:
-  - name: redis-claim
-    mountPath: /etc
+# Actual data
+volumeData:
+  name: redis-data
+  request: 1Gi
+  storageClassName: gp2
+  mountPath: /var/lib/redis-stack
 
 nodeSelector: {}
 

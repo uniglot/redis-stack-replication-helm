@@ -28,8 +28,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       initContainers:
-        - name: init-redis-stack
-          image: "{{ .Values.image.repository }}:{{ $.Chart.AppVersion }}"
+        - name: init-{{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           command:
             - /bin/bash
             - -c
@@ -43,23 +43,22 @@ spec:
                 exit 1
               fi
 
-              config_map_path="/mnt"
-              config_dest="/etc/redis-config.conf"
+              config_map_path={{ .Values.configMap.mountPath | quote }}
+              config_dest="{{ .Values.volumeConf.mountPath }}/redis-config.conf"
 
               if [[ ${ordinal} -eq 0 ]]; then
                 cp "${config_map_path}/master.conf" "${config_dest}"
               else
                 cp "${config_map_path}/replica.conf" "${config_dest}"
               fi
-          {{- with .Values.initVolumeMounts }}
           volumeMounts:
             - name: config-map
-              mountPath: /mnt
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+              mountPath: {{ .Values.configMap.mountPath }}
+            - name: {{ .Values.volumeConf.name }}
+              mountPath: {{ .Values.volumeConf.mountPath }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ $.Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
@@ -69,10 +68,14 @@ spec:
             - redis-stack-server
             - /etc/redis-config.conf
           volumeMounts:
-            {{- range .Values.volumes }}
-            - name: {{ .name }}
-              mountPath: {{ .mountPath }}
-            {{- end }}
+            - name: {{ .Values.volumeConf.name }}
+              request: {{ .Values.volumeConf.request }}
+              storageClassName: {{ .Values.volumeConf.storageClassName }}
+              mountPath: {{ .Values.volumeConf.mountPath }}
+            - name: {{ .Values.volumeData.name }}
+              request: {{ .Values.volumeData.request }}
+              storageClassName: {{ .Values.volumeData.storageClassName }}
+              mountPath: {{ .Values.volumeData.mountPath }}
       volumes:
         - name: config-map
           configMap:
@@ -90,14 +93,21 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
   volumeClaimTemplates:
-    {{- range .Values.volumes }}
     - metadata:
-        name: {{ .name }}
+        name: {{ .Values.volumeConf.name }}
       spec:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: {{ .request }}
-        storageClassName: {{ .storageClassName }}
-    {{- end }}
+            storage: {{ .Values.volumeConf.request }}
+        storageClassName: {{ .Values.volumeConf.storageClassName }}
+    - metadata:
+        name: {{ .Values.volumeData.name }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.volumeData.request }}
+        storageClassName: {{ .Values.volumeData.storageClassName }}
